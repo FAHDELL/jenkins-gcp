@@ -11,7 +11,7 @@ pipeline {
             steps {
                 echo 'Initializing Pipeline ...'
                 sh 'java -version'
-                sh 'mavn -version'
+                sh 'maven -version'
             }
         }
 
