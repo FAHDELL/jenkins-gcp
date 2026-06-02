@@ -1,11 +1,17 @@
 pipeline {
     agent any
+    tools{
+        jdk 'java21.0.11'
+        maven 'maven399'
+    }
 
     stages {
 
         stage('Initialize Pipeline') {
             steps {
                 echo 'Initializing Pipeline ...'
+                sh 'java -version'
+                sh 'mavn -version'
             }
         }
 
