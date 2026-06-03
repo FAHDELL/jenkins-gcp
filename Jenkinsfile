@@ -6,6 +6,8 @@ pipeline {
     }
     environment {
         SONAR_SCANNER_HOME = tool 'sonar8'
+        IMAGE_NAME = "JAVA-APP"
+        IMAGE_TAG = "${BUILD_NUMBER}"
     }
     stages {
 
@@ -66,6 +68,9 @@ pipeline {
         stage('Build & Tag Docker Image') {
             steps {
                 echo 'Building the Java App Docker Image'
+                sript {
+                    sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
+                }
             }
         }
 
