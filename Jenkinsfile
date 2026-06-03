@@ -4,7 +4,9 @@ pipeline {
         jdk 'java21.0.11'
         maven 'maven399'
     }
-
+    envirenement {
+        SONAR_SCANNER_HOME = tool 'sonar8'
+    }
     stages {
 
         stage('Initialize Pipeline') {
@@ -39,6 +41,18 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 echo 'Running Static Code Analysis with SonarQube'
+                withCredentials([string(credentialsId: 'sonartoken', variable: 'sonarToken')]) {
+                    withCredentials([string('sonar')]) {
+                        sh '''
+                           ${SONAR_SCANNER_HOME}/bin/sonar-scanner \
+                          -Dsonar.projectKey=jenkinsgcp \
+                          -Dsonar.sources=. \
+                          -Dsonar.host.url=http://172.18.0.3:9000 \
+                          -Dsonar.java.binaries=target/classes \
+                          -Dsonar.token=$sonarToken
+                        '''
+                    }
+                }
             }
         }
 
