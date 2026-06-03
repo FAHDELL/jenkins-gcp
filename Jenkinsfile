@@ -42,7 +42,7 @@ pipeline {
             steps {
                 echo 'Running Static Code Analysis with SonarQube'
                 withCredentials([string(credentialsId: 'sonartoken', variable: 'sonarToken')]) {
-                    withCredentials([string('sonar')]) {
+                    withSonarQubeEnv('sonar') {
                         sh '''
                            ${SONAR_SCANNER_HOME}/bin/sonar-scanner \
                           -Dsonar.projectKey=jenkinsgcp \
