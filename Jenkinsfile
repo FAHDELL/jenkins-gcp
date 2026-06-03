@@ -6,7 +6,7 @@ pipeline {
     }
     environment {
         SONAR_SCANNER_HOME = tool 'sonar8'
-        IMAGE_NAME = "JAVA-APP"
+        IMAGE_NAME = "java-app"
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
     stages {
@@ -77,6 +77,10 @@ pipeline {
         stage('Trivy Security Scan') {
             steps {
                 echo 'Scanning Docker Image with Trivy'
+                sh '''
+      			    trivy --severity HIGH,CRITICAL --cache-dir ${WORKSPACE}/.trivy-cache --no-progress --format table -o trivyFSScanReport.html image ${IMAGE_NAME}:${IMAGE_TAG}
+         		'''
+                }
             }
         }
 
