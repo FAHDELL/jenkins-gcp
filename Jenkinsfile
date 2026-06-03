@@ -68,7 +68,7 @@ pipeline {
         stage('Build & Tag Docker Image') {
             steps {
                 echo 'Building the Java App Docker Image'
-                sript {
+                script {
                     sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
                 }
             }
