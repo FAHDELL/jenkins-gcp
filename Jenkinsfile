@@ -18,6 +18,7 @@ pipeline {
         stage('Checkout GitHub Codes') {
             steps {
                 echo 'Checking out GitHub Codes'
+                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'jenkins-gcp', url: 'https://github.com/FAHDELL/jenkins-gcp.git']])
             }
         }
 
