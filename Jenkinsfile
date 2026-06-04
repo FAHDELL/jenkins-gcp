@@ -114,6 +114,14 @@ pipeline {
             }
     }
 
+        stage('Verify Deployment') {
+            steps {
+                sh 'kubectl rollout status deployment/java-app'
+                sh 'kubectl get pods'
+                sh 'kubectl get svc'
+            }
+    }
+
     post {
         always {
             archiveArtifacts artifacts: '''
