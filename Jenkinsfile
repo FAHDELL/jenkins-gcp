@@ -24,7 +24,6 @@ pipeline {
 
         stage('Checkout GitHub Codes') {
             steps {
-                echo 'Checking out GitHub Codes'
                 checkout scmGit(
                     branches: [[name: '*/main']],
                     userRemoteConfigs: [[
@@ -37,21 +36,18 @@ pipeline {
 
         stage('Maven Build') {
             steps {
-                echo 'Building Java App with Maven'
                 sh 'mvn clean package -DskipTests'
             }
         }
 
         stage('JUnit Tests') {
             steps {
-                echo 'Running Unit Tests'
                 sh 'mvn test'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                echo 'Running SonarQube Analysis'
                 withCredentials([string(credentialsId: 'sonartoken', variable: 'sonarToken')]) {
                     withSonarQubeEnv('sonar') {
                         sh '''
@@ -68,7 +64,6 @@ pipeline {
 
         stage('Trivy FS Scan') {
             steps {
-                echo 'Scanning File System with Trivy'
                 sh '''
                 trivy fs \
                   --format table \
@@ -80,14 +75,12 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                echo 'Building Docker Image'
                 sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
 
         stage('Trivy Image Scan') {
             steps {
-                echo 'Scanning Docker Image with Trivy'
                 sh '''
                 trivy image \
                   --timeout 30m \
@@ -100,6 +93,21 @@ pipeline {
             }
         }
 
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh 'kubectl apply -f k8s/deployment.yaml'
+                sh 'kubectl apply -f k8s/service.yaml'
+                sh 'kubectl rollout status deployment/java-app'
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                sh 'kubectl get pods'
+                sh 'kubectl get svc'
+            }
+        }
+
         stage('Azure Steps (Placeholder)') {
             steps {
                 echo 'Authenticate + Push to ACR + Deploy to ACI'
@@ -107,27 +115,12 @@ pipeline {
         }
     }
 
-       stage('Deploy to Kubernetes') {
-            steps {
-                sh 'kubectl apply -f k8s/deployment.yaml'
-                sh 'kubectl apply -f k8s/service.yaml'
-                sh 'kubectl rollout status deployment/java-app'
-            }
-        }
-        stage('Verify Deployment') {
-            steps {
-                sh 'kubectl rollout status deployment/java-app'
-                sh 'kubectl get pods'
-                sh 'kubectl get svc'
-            }
-    }
-
     post {
         always {
             archiveArtifacts artifacts: '''
                 FSScanReport.txt,
                 trivyImageScanReport.txt
-            ''', fingerprint: true
+            ''', fingerprint: true, allowEmptyArchive: true
         }
 
         success {
