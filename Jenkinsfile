@@ -84,6 +84,7 @@ pipeline {
                 echo 'Scanning Docker Image with Trivy'
                 sh '''
                     trivy image \
+                      --timeout 30m \
                       --severity HIGH,CRITICAL \
                       --cache-dir ${WORKSPACE}/.trivy-cache \
                       --no-progress \
