@@ -95,16 +95,26 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f k8s/deployment.yaml'
-                sh 'kubectl apply -f k8s/service.yaml'
-                sh 'kubectl rollout status deployment/java-app'
+                // 1. On télécharge kubectl dans le conteneur Jenkins
+                sh 'curl -LO "https://dl.k8s.io/release/\$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"'
+                sh 'chmod +x ./kubectl'
+                
+                // 2. On injecte temporairement le fichier kubeconfig secret
+                withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG_FILE')]) {
+                    // On pointe kubectl vers ce fichier avec le drapeau --kubeconfig
+                    sh './kubectl --kubeconfig=$KUBECONFIG_FILE apply -f k8s/deployment.yaml'
+                    sh './kubectl --kubeconfig=$KUBECONFIG_FILE apply -f k8s/service.yaml'
+                    sh './kubectl --kubeconfig=$KUBECONFIG_FILE rollout status deployment/java-app'
+                }
             }
         }
 
         stage('Verify Deployment') {
             steps {
-                sh 'kubectl get pods'
-                sh 'kubectl get svc'
+                withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG_FILE')]) {
+                    sh './kubectl --kubeconfig=$KUBECONFIG_FILE get pods'
+                    sh './kubectl --kubeconfig=$KUBECONFIG_FILE get svc'
+                }
             }
         }
 
