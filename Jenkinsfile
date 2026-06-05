@@ -99,12 +99,12 @@ pipeline {
                 sh 'curl -LO "https://dl.k8s.io/release/\$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"'
                 sh 'chmod +x ./kubectl'
                 
-                // 2. Récupération du texte secret et création du fichier à la volée
-                withCredentials([string(credentialsId: 'k8s-kubeconfig', variable: 'KUBE_TXT')]) {
-                    // On écrit le contenu du secret dans un fichier local secret_config.yaml
-                    writeFile file: 'secret_config.yaml', text: KUBE_TXT
+                // 2. Récupération du Base64 et décodage
+                withCredentials([string(credentialsId: 'k8s-kubeconfig', variable: 'KUBE_BASE64')]) {
+                    // On décode la variable directement dans un fichier propre
+                    sh 'echo "$KUBE_BASE64" | base64 -d > secret_config.yaml'
                     
-                    // On déploie en pointant sur ce fichier local
+                    // On applique
                     sh './kubectl --kubeconfig=secret_config.yaml apply -f k8s/deployment.yaml'
                     sh './kubectl --kubeconfig=secret_config.yaml apply -f k8s/service.yaml'
                     sh './kubectl --kubeconfig=secret_config.yaml rollout status deployment/java-app'
@@ -114,8 +114,8 @@ pipeline {
 
         stage('Verify Deployment') {
             steps {
-                withCredentials([string(credentialsId: 'k8s-kubeconfig', variable: 'KUBE_TXT')]) {
-                    writeFile file: 'secret_config.yaml', text: KUBE_TXT
+                withCredentials([string(credentialsId: 'k8s-kubeconfig', variable: 'KUBE_BASE64')]) {
+                    sh 'echo "$KUBE_BASE64" | base64 -d > secret_config.yaml'
                     sh './kubectl --kubeconfig=secret_config.yaml get pods'
                     sh './kubectl --kubeconfig=secret_config.yaml get svc'
                 }
