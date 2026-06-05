@@ -99,25 +99,20 @@ pipeline {
                 sh 'curl -LO "https://dl.k8s.io/release/\$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"'
                 sh 'chmod +x ./kubectl'
                 
-                // 2. Récupération du Base64 et décodage
-                withCredentials([string(credentialsId: 'k8s-kubeconfig', variable: 'KUBE_BASE64')]) {
-                    // On décode la variable directement dans un fichier propre
-                    sh 'echo "$KUBE_BASE64" | base64 -d > secret_config.yaml'
-                    
-                    // On applique
-                    sh './kubectl --kubeconfig=secret_config.yaml apply -f k8s/deployment.yaml'
-                    sh './kubectl --kubeconfig=secret_config.yaml apply -f k8s/service.yaml'
-                    sh './kubectl --kubeconfig=secret_config.yaml rollout status deployment/java-app'
+                // 2. Utilisation directe du fichier secret avec le nouvel ID
+                withCredentials([file(credentialsId: 'minikube-flat-config', variable: 'KUBECONFIG_FILE')]) {
+                    sh './kubectl --kubeconfig=$KUBECONFIG_FILE apply -f k8s/deployment.yaml'
+                    sh './kubectl --kubeconfig=$KUBECONFIG_FILE apply -f k8s/service.yaml'
+                    sh './kubectl --kubeconfig=$KUBECONFIG_FILE rollout status deployment/java-app'
                 }
             }
         }
 
         stage('Verify Deployment') {
             steps {
-                withCredentials([string(credentialsId: 'k8s-kubeconfig', variable: 'KUBE_BASE64')]) {
-                    sh 'echo "$KUBE_BASE64" | base64 -d > secret_config.yaml'
-                    sh './kubectl --kubeconfig=secret_config.yaml get pods'
-                    sh './kubectl --kubeconfig=secret_config.yaml get svc'
+                withCredentials([file(credentialsId: 'minikube-flat-config', variable: 'KUBECONFIG_FILE')]) {
+                    sh './kubectl --kubeconfig=$KUBECONFIG_FILE get pods'
+                    sh './kubectl --kubeconfig=$KUBECONFIG_FILE get svc'
                 }
             }
         }
