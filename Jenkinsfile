@@ -95,25 +95,29 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                // 1. On télécharge kubectl dans le conteneur Jenkins
+                // 1. Téléchargement de kubectl
                 sh 'curl -LO "https://dl.k8s.io/release/\$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"'
                 sh 'chmod +x ./kubectl'
                 
-                // 2. On injecte temporairement le fichier kubeconfig secret
-                withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG_FILE')]) {
-                    // On pointe kubectl vers ce fichier avec le drapeau --kubeconfig
-                    sh './kubectl --kubeconfig=$KUBECONFIG_FILE apply -f k8s/deployment.yaml'
-                    sh './kubectl --kubeconfig=$KUBECONFIG_FILE apply -f k8s/service.yaml'
-                    sh './kubectl --kubeconfig=$KUBECONFIG_FILE rollout status deployment/java-app'
+                // 2. Récupération du texte secret et création du fichier à la volée
+                withCredentials([string(credentialsId: 'k8s-kubeconfig', variable: 'KUBE_TXT')]) {
+                    // On écrit le contenu du secret dans un fichier local secret_config.yaml
+                    writeFile file: 'secret_config.yaml', text: KUBE_TXT
+                    
+                    // On déploie en pointant sur ce fichier local
+                    sh './kubectl --kubeconfig=secret_config.yaml apply -f k8s/deployment.yaml'
+                    sh './kubectl --kubeconfig=secret_config.yaml apply -f k8s/service.yaml'
+                    sh './kubectl --kubeconfig=secret_config.yaml rollout status deployment/java-app'
                 }
             }
         }
 
         stage('Verify Deployment') {
             steps {
-                withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG_FILE')]) {
-                    sh './kubectl --kubeconfig=$KUBECONFIG_FILE get pods'
-                    sh './kubectl --kubeconfig=$KUBECONFIG_FILE get svc'
+                withCredentials([string(credentialsId: 'k8s-kubeconfig', variable: 'KUBE_TXT')]) {
+                    writeFile file: 'secret_config.yaml', text: KUBE_TXT
+                    sh './kubectl --kubeconfig=secret_config.yaml get pods'
+                    sh './kubectl --kubeconfig=secret_config.yaml get svc'
                 }
             }
         }
