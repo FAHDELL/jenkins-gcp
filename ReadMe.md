@@ -437,4 +437,3 @@ On Azure Portal > Go to Container Instances and Refresh to verify > Settings and
 3. Stop and Delete Jenkins & SonarQube containers
 
 
-***LIKE, COMMENT, & SUBSCRIBE To iQuant on YouTube !!!***
